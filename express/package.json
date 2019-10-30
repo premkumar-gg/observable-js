@@ -1,0 +1,20 @@
+{
+  "name": "observable-expressjs",
+  "version": "0.1.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "Premkumar Anand <premkumar@foshio.co.uk>",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "jaeger-client": "^3.17.1",
+    "merge-options": "^2.0.0"
+  },
+  "devDependencies": {
+    "mocha": "^6.2.2",
+    "sinon": "^7.5.0"
+  }
+}
