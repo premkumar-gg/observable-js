@@ -15,8 +15,8 @@ describe('tracer', function() {
     assert.equal(typeof tracer.startHttpSpan, 'function')
   });
 
-  it ('has jaegerTracer field', () => {
-    assert.equal(typeof tracer.jaegerTracer, 'object')
+  it ('has getBaseTracer function', () => {
+    assert.equal(typeof tracer.getBaseTracer, 'function')
   });
 
   describe('.init', () => {

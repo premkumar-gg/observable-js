@@ -14,7 +14,7 @@ const observed = observable.observe(app, {
 
 app.get('/', (req, res) => {
 
-  var aChildSpan = observed.tracer.startSpan("outbound_http_request", { childOf: observed.tracer.globalSpan });
+  var aChildSpan = observed.tracer.getBaseTracer().startSpan("outbound_http_request", { childOf: observed.tracer.globalSpan });
   aChildSpan.log({google: 'called'});
 
   axios.get('https://google.com')

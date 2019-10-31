@@ -38,9 +38,13 @@ function startHttpSpan(req, name) {
   return theSpan;
 }
 
+function getBaseTracer() {
+  return jaegerTracer;
+}
+
 module.exports = {
   init,
   defaultOptions,
   startHttpSpan,
-  jaegerTracer
+  getBaseTracer
 };
