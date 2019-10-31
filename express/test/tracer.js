@@ -80,9 +80,9 @@ describe('tracer', function() {
   })
 
   describe('.startHttpSpan', () => {
-    var jaegerStartSpan = sinon.fake();
     var jaegerLog = sinon.fake();
-    var jaegerTracer = { startSpan: jaegerStartSpan, log: jaegerLog };
+    var jaegerStartSpan = sinon.fake.returns({ log: jaegerLog});
+    var jaegerTracer = { startSpan: jaegerStartSpan };
     var initTracerFromEnv = sinon.fake.returns(jaegerTracer);
     var jaegerCli = { initTracerFromEnv: initTracerFromEnv };
 

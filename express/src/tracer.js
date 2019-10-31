@@ -33,7 +33,7 @@ function init(jaegerCli, options) {
 
 function startHttpSpan(req, name) {
   const theSpan = jaegerTracer.startSpan(name || 'inbound_http_request');
-  jaegerTracer.log({ url: req.url, method: req.method });
+  theSpan.log({ url: req.url, method: req.method });
 
   return theSpan;
 }
