@@ -1,9 +1,10 @@
 const express = require('express');
 const app = express();
+const axios = require('axios').default;
 
 const observable = require('observable-expressjs');
 
-observable.observe(app, {
+const observed = observable.observe(app, {
   tracing: {
     config: {
       serviceName: 'example-app'
@@ -11,8 +12,16 @@ observable.observe(app, {
   }
 });
 
-app.get('/manage/health', (req, res) => {
-  res.sendStatus(204);
+app.get('/', (req, res) => {
+
+  var aChildSpan = observed.tracer.startSpan("outbound_http_request", { childOf: observed.tracer.globalSpan });
+  aChildSpan.log({google: 'called'});
+
+  axios.get('https://google.com')
+    .then(() => {
+      aChildSpan.finish();
+      res.sendStatus(200);
+    })
 });
 
 app.listen(3000, () => console.log(`example listening on port 3000!`));

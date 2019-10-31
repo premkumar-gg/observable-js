@@ -1,28 +1,31 @@
-const tracer = require("./tracer");
-const mergeOptions = require('merge-options');
+const tracer = require('./tracer');
+const app = require('./app');
 const jaegerCli = require('jaeger-client');
 
 const defaultOptions = {
   tracing: {}
 };
 
-function isExpressObject(server) {
-  if (!('get' in server && 'post' in server)) {
-    return false;
-  }
-
-  return typeof server['get'] === 'function' && typeof server['post'] === 'function';
-}
 
 function observe(server, options, aJaegerCli) {
   let theJaegerCli = aJaegerCli || jaegerCli;
 
-  if ( ! isExpressObject(server)) {
-    throw Error('server is not an express app');
+  app.init(server);
+
+  options = Object.assign(defaultOptions, options);
+
+  var observed = {
+    tracer: null
+  };
+
+  if (options.tracing !== false) {
+    var theTracer = tracer.init(theJaegerCli, options.tracing);
+    app.setTracer(theTracer);
+
+    observed.tracer = theTracer;
   }
 
-  options = mergeOptions(defaultOptions, options);
-  tracer.init(theJaegerCli, options.tracing);
+  return observed;
 }
 
 module.exports = {
