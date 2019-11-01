@@ -15,7 +15,7 @@ function setSpanMiddleware(aTracer) {
       return;
     }
 
-    aTracer.globalSpan = aTracer.startHttpSpan(req);
+    aTracer.startParentHttpSpan(req);
 
     const afterResponse = () => {
       res.removeListener('finish', afterResponse);

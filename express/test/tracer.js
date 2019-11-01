@@ -11,8 +11,12 @@ describe('tracer', function() {
     assert.equal(typeof tracer.init, 'function')
   });
 
-  it ('has startHttpSpan function', () => {
-    assert.equal(typeof tracer.startHttpSpan, 'function')
+  it ('has startParentHttpSpan function', () => {
+    assert.equal(typeof tracer.startParentHttpSpan, 'function')
+  });
+
+  it ('has startSpan function', () => {
+    assert.equal(typeof tracer.startSpan, 'function')
   });
 
   it ('has getBaseTracer function', () => {
@@ -82,7 +86,101 @@ describe('tracer', function() {
     });
   });
 
-  describe('.startHttpSpan', () => {
+  describe('.startSpan', () => {
+    var jaegerLog = sinon.fake();
+    var jaegerStartSpan = sinon.fake.returns({log: jaegerLog });
+    var jaegerTracer = { startSpan: jaegerStartSpan, log: jaegerLog };
+    var initTracerFromEnv = sinon.fake.returns(jaegerTracer);
+    var jaegerCli = { initTracerFromEnv: initTracerFromEnv };
+
+    var checkConfig;
+
+    beforeEach(() => {
+      checkConfig = {
+        serviceName: 'sample-app',
+        sampler: {
+          type: "const",
+          param: 1,
+        },
+        reporter: {
+          logSpans: true
+        },
+      };
+    });
+
+    it ('forwards it to the base jaegerTracer', () => {
+      var theTracer = tracer.init(
+        jaegerCli,
+        { config: checkConfig }
+      );
+
+      theTracer.startSpan('child_span', { some: 'thing' });
+      sinon.assert.calledWith(
+        jaegerStartSpan,
+        'child_span',
+        { some: 'thing' });
+    });
+
+    describe ('when called after .startParentHttpSpan', () => {
+      let theTracer;
+      let theParentSpan;
+
+      beforeEach(() => {
+        theTracer = tracer.init(
+          jaegerCli,
+          { config: {}, logger: {} }
+        );
+
+        theParentSpan = theTracer.startParentHttpSpan({url: '/something', method: 'GET'});
+      });
+
+      describe ('with an empty field set', () => {
+        it ('sets childOf = theParentSpan', () => {
+          theTracer.startSpan('child_span');
+
+          sinon.assert.calledWith(
+            jaegerStartSpan,
+            'child_span',
+            { childOf: theParentSpan });
+        });
+
+        it ('as detached span, does not set childOf = theParentSpan', () => {
+          const isDetached = true;
+          theTracer.startSpan('child_span', null, isDetached);
+
+          sinon.assert.calledWith(
+            jaegerStartSpan,
+            'child_span',
+            {});
+        });
+
+      });
+
+      describe ('with a field set', () => {
+        it ('sets childOf = theParentSpan', () => {
+          theTracer.startSpan('child_span', { some: 'thing' });
+
+          sinon.assert.calledWith(
+            jaegerStartSpan,
+            'child_span',
+            { some: 'thing', childOf: theParentSpan });
+        });
+
+        it ('as detached span, does not set childOf = theParentSpan', () => {
+          const isDetached = true;
+          theTracer.startSpan('child_span', { some: 'thing' }, isDetached);
+
+          sinon.assert.calledWith(
+            jaegerStartSpan,
+            'child_span',
+            { some: 'thing' });
+        });
+
+      });
+    });
+  });
+
+  describe('.startParentHttpSpan', () => {
     var jaegerLog = sinon.fake();
     var jaegerStartSpan = sinon.fake.returns({ log: jaegerLog});
     var jaegerTracer = { startSpan: jaegerStartSpan };
@@ -96,7 +194,7 @@ describe('tracer', function() {
         jaegerCli,
         { config: {}, logger: {} }
       );
-      theTracer.startHttpSpan(theReq);
+      theTracer.startParentHttpSpan(theReq);
     });
 
     it('starts span with name "inboud_http_request"', () => {
@@ -104,7 +202,7 @@ describe('tracer', function() {
         jaegerCli,
         { config: {}, logger: {} }
       );
-      theTracer.startHttpSpan(theReq);
+      theTracer.startParentHttpSpan(theReq);
 
       sinon.assert.calledWith(
         jaegerStartSpan,
@@ -117,7 +215,7 @@ describe('tracer', function() {
         jaegerCli,
         { config: {}, logger: {} }
       );
-      theTracer.startHttpSpan(theReq, 'ex_span_name');
+      theTracer.startParentHttpSpan(theReq, 'ex_span_name');
 
       sinon.assert.calledWith(
         jaegerStartSpan,
@@ -130,7 +228,7 @@ describe('tracer', function() {
         jaegerCli,
         { config: {}, logger: {} }
       );
-      theTracer.startHttpSpan(theReq);
+      theTracer.startParentHttpSpan(theReq);
 
       sinon.assert.calledWith(
         jaegerLog,
