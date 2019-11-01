@@ -25,51 +25,26 @@ describe('tracer', function() {
     var jaegerTracer = { startSpan: jaegerStartSpan, log: jaegerLog };
     var initTracerFromEnv = sinon.fake.returns(jaegerTracer);
     var jaegerCli = { initTracerFromEnv: initTracerFromEnv };
+    var checkConfig;
+
+    beforeEach(() => {
+      checkConfig = {
+        serviceName: 'sample-app',
+        sampler: {
+          type: "const",
+          param: 1,
+        },
+        reporter: {
+          logSpans: true
+        },
+      };
+    });
 
     it ('calls jaeger-client.initJaegerTracerFromEnv', () => {
       tracer.init(
         jaegerCli,
-        { config: {}, logger: {} }
+        { config: { serviceName: 'sample-app' } }
       );
-
-      sinon.assert.calledWith(
-        initTracerFromEnv,
-        tracer.defaultOptions.config,
-        { logger: tracer.defaultOptions.logger }
-      )
-    });
-
-    it ('sets .startSpan from jaegerTracer', () => {
-      var theTracer = tracer.init(
-        jaegerCli,
-        { config: {}, logger: {} }
-      );
-
-      assert.equal(theTracer.startSpan, jaegerStartSpan);
-    });
-
-    it ('allows overriding jaeger config', () => {
-      const theOptions = {
-        config: {
-          serviceName: 'sample-app',
-          sampler: {
-            type: 'probabilistic'
-          },
-          reporter: {
-            logSpans: false
-          }
-        }, logger: {}
-      };
-
-      tracer.init(
-        jaegerCli,
-        theOptions
-      );
-
-      var checkConfig = tracer.defaultOptions.config;
-      checkConfig.serviceName = 'sample-app';
-      checkConfig.sampler.type = 'probabilistic';
-      checkConfig.reporter.logSpans = false;
 
       sinon.assert.calledWith(
         initTracerFromEnv,
@@ -77,7 +52,35 @@ describe('tracer', function() {
         { logger: tracer.defaultOptions.logger }
       )
     });
-  })
+
+    it ('takes default jaeger config if one is not supplied', () => {
+      tracer.init(
+        jaegerCli,
+        { config: { serviceName: 'sample-app' } }
+      );
+
+      sinon.assert.calledWith(
+        initTracerFromEnv,
+        checkConfig,
+        { logger: tracer.defaultOptions.logger }
+      )
+    });
+
+    it ('allows overriding jaeger config', () => {
+      checkConfig.sampler.type = 'probabilistic';
+
+      tracer.init(
+        jaegerCli,
+        { config: checkConfig }
+      );
+
+      sinon.assert.calledWith(
+        initTracerFromEnv,
+        checkConfig,
+        { logger: tracer.defaultOptions.logger }
+      )
+    });
+  });
 
   describe('.startHttpSpan', () => {
     var jaegerLog = sinon.fake();

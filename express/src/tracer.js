@@ -1,3 +1,4 @@
+let mergeOptions = require('merge-options');
 let jaegerTracer = null;
 
 const defaultOptions = {
@@ -20,13 +21,11 @@ const defaultOptions = {
 };
 
 function init(jaegerCli, options) {
-  options = Object.assign(defaultOptions, options);
+  options = mergeOptions(defaultOptions, options);
 
   jaegerTracer = jaegerCli.initTracerFromEnv(options.config, {
     logger: options.logger
   });
-
-  this.startSpan = jaegerTracer.startSpan;
 
   return this;
 }

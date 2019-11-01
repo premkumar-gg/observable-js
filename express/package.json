@@ -1,6 +1,6 @@
 {
   "name": "observable-expressjs",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -10,7 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1",
-    "jaeger-client": "^3.17.1"
+    "jaeger-client": "^3.17.1",
+    "merge-options": "^2.0.0"
   },
   "devDependencies": {
     "mocha": "^6.2.2",
