@@ -1,5 +1,3 @@
-var theServer;
-
 function isExpressObject(server) {
   if (!('get' in server && 'post' in server)) {
     return false;
@@ -9,37 +7,34 @@ function isExpressObject(server) {
 }
 
 function setSpanMiddleware(aTracer) {
-  theServer.use((req, res, next) => {
+  this.server.use((req, res, next) => {
     if (req.url === "/manage/health") {
       next();
       return;
     }
 
-    aTracer.startParentHttpSpan(req);
+    const parentSpan = aTracer.startParentHttpSpan(req);
 
-    const afterResponse = () => {
+    const afterResponse = (theSpan) => {
       res.removeListener('finish', afterResponse);
-
-      aTracer.globalSpan.finish();
+      theSpan.finish();
     };
 
-    res.on('finish', afterResponse);
+    res.on('finish', () => afterResponse(parentSpan));
 
     next()
   });
 }
 
-function init(server) {
+function App(server) {
   if ( ! isExpressObject(server)) {
     throw Error('server is not an express app');
   }
 
-  theServer = server;
-
-  return this;
+  this.server = server;
+  this.setTracer = setSpanMiddleware;
 }
 
 module.exports = {
-  init,
-  setTracer: setSpanMiddleware
+  App
 };

@@ -1,5 +1,5 @@
-const tracer = require('./tracer');
-const app = require('./app');
+const Tracer = require('./tracer').Tracer;
+const App = require('./app').App;
 const jaegerCli = require('jaeger-client');
 let mergeOptions = require('merge-options');
 
@@ -11,7 +11,7 @@ const defaultOptions = {
 function observe(server, options, aJaegerCli) {
   let theJaegerCli = aJaegerCli || jaegerCli;
 
-  app.init(server);
+  let app = new App(server);
 
   options = mergeOptions(defaultOptions, options);
 
@@ -20,7 +20,7 @@ function observe(server, options, aJaegerCli) {
   };
 
   if (options.tracing !== false) {
-    var theTracer = tracer.init(theJaegerCli, options.tracing);
+    var theTracer = new Tracer(theJaegerCli, options.tracing);
     app.setTracer(theTracer);
 
     observed.tracer = theTracer;

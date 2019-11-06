@@ -1,7 +1,4 @@
 let mergeOptions = require('merge-options');
-let jaegerTracer = null;
-let globalSpan = null;
-let _this = null;
 
 const defaultOptions = {
   config: {
@@ -25,42 +22,41 @@ const defaultOptions = {
 function startSpan(name, fields, isDetached) {
   fields = fields || {};
 
-  if (!isDetached && _this.globalSpan) {
-    fields.childOf = _this.globalSpan;
+  if (!isDetached && this.globalSpan) {
+    fields.childOf = this.globalSpan;
   }
 
-  return jaegerTracer.startSpan(name, fields);
+  return this.jaegerTracer.startSpan(name, fields);
 }
 
 function startParentHttpSpan(req, name) {
-  const theSpan = jaegerTracer.startSpan(name || 'inbound_http_request');
+  const theSpan = this.jaegerTracer.startSpan(name || 'inbound_http_request');
   theSpan.log({ url: req.url, method: req.method });
 
-  _this.globalSpan = theSpan;
+  this.globalSpan = theSpan;
 
   return theSpan;
 }
 
 function getBaseTracer() {
-  return jaegerTracer;
+  return this.jaegerTracer;
 }
 
-function init(jaegerCli, options) {
-  options = mergeOptions(defaultOptions, options);
+function Tracer(jaegerCli, options) {
+  this.globalSpan = null;
 
-  jaegerTracer = jaegerCli.initTracerFromEnv(options.config, {
-    logger: options.logger
+  this.options = mergeOptions(defaultOptions, options);
+
+  this.jaegerTracer = jaegerCli.initTracerFromEnv(this.options.config, {
+    logger: this.options.logger
   });
 
-  _this = this;
-
-  return this;
+  this.defaultOptions = defaultOptions;
+  this.startParentHttpSpan = startParentHttpSpan;
+  this.startSpan = startSpan;
+  this.getBaseTracer = getBaseTracer;
 }
 
 module.exports = {
-  init,
-  defaultOptions,
-  startParentHttpSpan,
-  startSpan,
-  getBaseTracer
+  Tracer
 };

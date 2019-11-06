@@ -1,14 +1,23 @@
 const sinon = require('sinon');
-const tracer = require('../src/tracer');
+const Tracer = require('../src/tracer').Tracer;
 const assert = require('assert');
 
 describe('tracer', function() {
-  it ('has defaultOptions', () => {
-    assert(typeof tracer.defaultOptions === 'object')
+
+  var tracer;
+
+  beforeEach(() => {
+    var jaegerStartSpan = sinon.fake();
+    var jaegerLog = sinon.fake();
+    var jaegerTracer = { startSpan: jaegerStartSpan, log: jaegerLog };
+    var initTracerFromEnv = sinon.fake.returns(jaegerTracer);
+    var jaegerCli = { initTracerFromEnv: initTracerFromEnv };
+
+    tracer = new Tracer(jaegerCli)
   });
 
-  it ('has init function', () => {
-    assert.equal(typeof tracer.init, 'function')
+  it ('has defaultOptions', () => {
+    assert(typeof tracer.defaultOptions === 'object')
   });
 
   it ('has startParentHttpSpan function', () => {
@@ -23,13 +32,13 @@ describe('tracer', function() {
     assert.equal(typeof tracer.getBaseTracer, 'function')
   });
 
-  describe('.init', () => {
-    var jaegerStartSpan = sinon.fake();
-    var jaegerLog = sinon.fake();
-    var jaegerTracer = { startSpan: jaegerStartSpan, log: jaegerLog };
-    var initTracerFromEnv = sinon.fake.returns(jaegerTracer);
-    var jaegerCli = { initTracerFromEnv: initTracerFromEnv };
-    var checkConfig;
+  describe('Tracer constructor', () => {
+    const jaegerStartSpan = sinon.fake();
+    const jaegerLog = sinon.fake();
+    const jaegerTracer = { startSpan: jaegerStartSpan, log: jaegerLog };
+    const initTracerFromEnv = sinon.fake.returns(jaegerTracer);
+    const jaegerCli = { initTracerFromEnv: initTracerFromEnv };
+    let checkConfig;
 
     beforeEach(() => {
       checkConfig = {
@@ -45,10 +54,8 @@ describe('tracer', function() {
     });
 
     it ('calls jaeger-client.initJaegerTracerFromEnv', () => {
-      tracer.init(
-        jaegerCli,
-        { config: { serviceName: 'sample-app' } }
-      );
+      const tracer = new Tracer(jaegerCli,
+        {config: {serviceName: 'sample-app'}});
 
       sinon.assert.calledWith(
         initTracerFromEnv,
@@ -58,10 +65,8 @@ describe('tracer', function() {
     });
 
     it ('takes default jaeger config if one is not supplied', () => {
-      tracer.init(
-        jaegerCli,
-        { config: { serviceName: 'sample-app' } }
-      );
+      const tracer = new Tracer(jaegerCli,
+        {config: {serviceName: 'sample-app'}});
 
       sinon.assert.calledWith(
         initTracerFromEnv,
@@ -73,10 +78,8 @@ describe('tracer', function() {
     it ('allows overriding jaeger config', () => {
       checkConfig.sampler.type = 'probabilistic';
 
-      tracer.init(
-        jaegerCli,
-        { config: checkConfig }
-      );
+      const tracer = new Tracer(jaegerCli,
+        {config: checkConfig});
 
       sinon.assert.calledWith(
         initTracerFromEnv,
@@ -87,13 +90,13 @@ describe('tracer', function() {
   });
 
   describe('.startSpan', () => {
-    var jaegerLog = sinon.fake();
-    var jaegerStartSpan = sinon.fake.returns({log: jaegerLog });
-    var jaegerTracer = { startSpan: jaegerStartSpan, log: jaegerLog };
-    var initTracerFromEnv = sinon.fake.returns(jaegerTracer);
-    var jaegerCli = { initTracerFromEnv: initTracerFromEnv };
+    const jaegerLog = sinon.fake();
+    const jaegerStartSpan = sinon.fake.returns({log: jaegerLog });
+    const jaegerTracer = { startSpan: jaegerStartSpan, log: jaegerLog };
+    const initTracerFromEnv = sinon.fake.returns(jaegerTracer);
+    const jaegerCli = { initTracerFromEnv: initTracerFromEnv };
 
-    var checkConfig;
+    let checkConfig;
 
     beforeEach(() => {
       checkConfig = {
@@ -109,7 +112,7 @@ describe('tracer', function() {
     });
 
     it ('forwards it to the base jaegerTracer', () => {
-      var theTracer = tracer.init(
+      const theTracer = new Tracer(
         jaegerCli,
         { config: checkConfig }
       );
@@ -126,7 +129,7 @@ describe('tracer', function() {
       let theParentSpan;
 
       beforeEach(() => {
-        theTracer = tracer.init(
+        theTracer = new Tracer(
           jaegerCli,
           { config: {}, logger: {} }
         );
@@ -181,16 +184,16 @@ describe('tracer', function() {
   });
 
   describe('.startParentHttpSpan', () => {
-    var jaegerLog = sinon.fake();
-    var jaegerStartSpan = sinon.fake.returns({ log: jaegerLog});
-    var jaegerTracer = { startSpan: jaegerStartSpan };
-    var initTracerFromEnv = sinon.fake.returns(jaegerTracer);
-    var jaegerCli = { initTracerFromEnv: initTracerFromEnv };
+    const jaegerLog = sinon.fake();
+    const jaegerStartSpan = sinon.fake.returns({ log: jaegerLog});
+    const jaegerTracer = { startSpan: jaegerStartSpan };
+    const initTracerFromEnv = sinon.fake.returns(jaegerTracer);
+    const jaegerCli = { initTracerFromEnv: initTracerFromEnv };
 
     const theReq = { url: '/something', method: 'GET' };
 
     beforeEach(() => {
-      let theTracer = tracer.init(
+      let theTracer = new Tracer(
         jaegerCli,
         { config: {}, logger: {} }
       );
@@ -198,7 +201,7 @@ describe('tracer', function() {
     });
 
     it('starts span with name "inboud_http_request"', () => {
-      let theTracer = tracer.init(
+      let theTracer = new Tracer(
         jaegerCli,
         { config: {}, logger: {} }
       );
@@ -211,7 +214,7 @@ describe('tracer', function() {
     });
 
     it('starts span with custom name if supplied', () => {
-      let theTracer = tracer.init(
+      let theTracer = new Tracer(
         jaegerCli,
         { config: {}, logger: {} }
       );
@@ -224,7 +227,7 @@ describe('tracer', function() {
     });
 
     it('calls tracer log with passed request', () => {
-      let theTracer = tracer.init(
+      let theTracer = new Tracer(
         jaegerCli,
         { config: {}, logger: {} }
       );
