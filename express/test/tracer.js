@@ -91,7 +91,8 @@ describe('tracer', function() {
 
   describe('.startSpan', () => {
     const jaegerLog = sinon.fake();
-    const jaegerStartSpan = sinon.fake.returns({log: jaegerLog });
+    const jaegerSetTag = sinon.fake();
+    const jaegerStartSpan = sinon.fake.returns({ log: jaegerLog, setTag: jaegerSetTag });
     const jaegerTracer = { startSpan: jaegerStartSpan, log: jaegerLog };
     const initTracerFromEnv = sinon.fake.returns(jaegerTracer);
     const jaegerCli = { initTracerFromEnv: initTracerFromEnv };
@@ -184,21 +185,13 @@ describe('tracer', function() {
   });
 
   describe('.startParentHttpSpan', () => {
-    const jaegerLog = sinon.fake();
-    const jaegerStartSpan = sinon.fake.returns({ log: jaegerLog});
+    const jaegerSetTag = sinon.fake();
+    const jaegerStartSpan = sinon.fake.returns({ setTag: jaegerSetTag });
     const jaegerTracer = { startSpan: jaegerStartSpan };
     const initTracerFromEnv = sinon.fake.returns(jaegerTracer);
     const jaegerCli = { initTracerFromEnv: initTracerFromEnv };
 
     const theReq = { url: '/something', method: 'GET' };
-
-    beforeEach(() => {
-      let theTracer = new Tracer(
-        jaegerCli,
-        { config: {}, logger: {} }
-      );
-      theTracer.startParentHttpSpan(theReq);
-    });
 
     it('starts span with name "inboud_http_request"', () => {
       let theTracer = new Tracer(
@@ -226,7 +219,7 @@ describe('tracer', function() {
       );
     });
 
-    it('calls tracer log with passed request', () => {
+    it('sets tag with passed request url and method', () => {
       let theTracer = new Tracer(
         jaegerCli,
         { config: {}, logger: {} }
@@ -234,10 +227,166 @@ describe('tracer', function() {
       theTracer.startParentHttpSpan(theReq);
 
       sinon.assert.calledWith(
-        jaegerLog,
-        theReq
+        jaegerSetTag,
+        'http.url',
+        theReq.url
+      );
+
+      sinon.assert.calledWith(
+        jaegerSetTag,
+        'http.method',
+        theReq.method
       );
     })
 
+  });
+
+  describe('.startHttpSpan', () => {
+    const jaegerSetTag = sinon.fake();
+    const jaegerStartSpan = sinon.fake.returns({ setTag: jaegerSetTag });
+    const jaegerInject = sinon.fake();
+    const jaegerTracer = { startSpan: jaegerStartSpan, inject: jaegerInject };
+    const initTracerFromEnv = sinon.fake.returns(jaegerTracer);
+    const jaegerCli = { initTracerFromEnv: initTracerFromEnv };
+
+    const theParentReq = { url: '/something', method: 'GET' };
+    const theChildReq = { url: '/some-child', method: 'GET' };
+
+    beforeEach(() => {
+      let theTracer = new Tracer(
+        jaegerCli,
+        { config: {}, logger: {} }
+      );
+      theTracer.startParentHttpSpan(theParentReq);
+    });
+
+    it('starts span with name "outbound_http_request"', () => {
+      let theTracer = new Tracer(
+        jaegerCli,
+        { config: {}, logger: {} }
+      );
+
+      let theHeaders = {};
+      theTracer.startHttpSpan(theChildReq.url, theChildReq.method, theHeaders);
+
+      sinon.assert.calledWith(
+        jaegerStartSpan,
+        'outbound_http_request'
+      );
+    });
+
+    it('sets tag with passed request url and method', () => {
+      let theTracer = new Tracer(
+        jaegerCli,
+        { config: {}, logger: {} }
+      );
+      let theHeaders = {};
+      theTracer.startHttpSpan(theChildReq.url, theChildReq.method, theHeaders);
+
+      sinon.assert.calledWith(
+        jaegerSetTag,
+        'http.url',
+        theChildReq.url
+      );
+
+      sinon.assert.calledWith(
+        jaegerSetTag,
+        'http.method',
+        theChildReq.method
+      );
+    });
+
+    it('injects headers with the span', () => {
+      let theTracer = new Tracer(
+        jaegerCli,
+        { config: {}, logger: {} }
+      );
+      let theHeaders = {};
+      const theChildSpan = theTracer.startHttpSpan(theChildReq.url, theChildReq.method, theHeaders);
+
+      sinon.assert.calledWith(
+        jaegerInject,
+        theChildSpan,
+        sinon.match.any,
+        {}
+      );
+    });
+
+  });
+
+  describe('.finishSpan', () => {
+    const jaegerSetTag = sinon.fake();
+    const jaegerStartSpan = sinon.fake.returns({ setTag: jaegerSetTag });
+    const jaegerInject = sinon.fake();
+    const jaegerTracer = { startSpan: jaegerStartSpan, inject: jaegerInject };
+    const initTracerFromEnv = sinon.fake.returns(jaegerTracer);
+    const jaegerCli = { initTracerFromEnv: initTracerFromEnv };
+
+    const theParentReq = { url: '/something', method: 'GET' };
+    const theChildReq = { url: '/some-child', method: 'GET' };
+    var theTracer;
+
+    beforeEach(() => {
+      theTracer = new Tracer(
+        jaegerCli,
+        { config: {}, logger: {} }
+      );
+      theTracer.startParentHttpSpan(theParentReq);
+    });
+
+    it('calls the span\'s finish', () => {
+      let theHeaders = {};
+      var theChildSpan = theTracer.startHttpSpan(theChildReq.url, theChildReq.method, theHeaders);
+
+      theChildSpan.finish = sinon.spy();
+
+      theTracer.finishSpan(theChildSpan);
+
+      sinon.assert.calledOnce(
+        theChildSpan.finish
+      );
+    });
+  });
+
+  describe('.finishHttpSpan', () => {
+    const jaegerSetTag = sinon.fake();
+    const jaegerStartSpan = sinon.fake.returns({ setTag: jaegerSetTag });
+    const jaegerInject = sinon.fake();
+    const jaegerTracer = { startSpan: jaegerStartSpan, inject: jaegerInject };
+    const initTracerFromEnv = sinon.fake.returns(jaegerTracer);
+    const jaegerCli = { initTracerFromEnv: initTracerFromEnv };
+
+    const theParentReq = { url: '/something', method: 'GET' };
+    const theChildReq = { url: '/some-child', method: 'GET' };
+    var theChildSpan;
+
+    beforeEach(() => {
+      let theTracer = new Tracer(
+        jaegerCli,
+        { config: {}, logger: {} }
+      );
+      theTracer.startParentHttpSpan(theParentReq);
+
+      let theHeaders = {};
+      theChildSpan = theTracer.startHttpSpan(theChildReq.url, theChildReq.method, theHeaders);
+
+      theChildSpan.finish = sinon.spy();
+
+      theTracer.finishHttpSpan(theChildSpan, 200);
+    });
+
+    it('calls the span\'s finish', () => {
+      sinon.assert.calledOnce(
+        theChildSpan.finish
+      );
+    });
+
+    it('sets status code as a span tag', () => {
+      sinon.assert.calledWith(
+        jaegerSetTag,
+        'http.status_code',
+        200
+      );
+    });
   })
 });
