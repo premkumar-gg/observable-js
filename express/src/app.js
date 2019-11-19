@@ -13,6 +13,8 @@ function setSpanMiddleware(aTracer) {
       return;
     }
 
+    req.tracer = aTracer;
+
     const parentSpan = aTracer.startParentHttpSpan(req);
 
     const afterResponse = (theSpan) => {
