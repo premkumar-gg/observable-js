@@ -6,6 +6,7 @@
   "scripts": {
     "test": "mocha"
   },
+  "homepage": "https://github.com/premkumar-gg/observable-js",
   "author": "Premkumar Anand <premkumar@foshio.co.uk>",
   "license": "ISC",
   "dependencies": {
@@ -16,5 +17,9 @@
   "devDependencies": {
     "mocha": "^6.2.2",
     "sinon": "^7.5.0"
+  },
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/premkumar-gg/observable-js.git"
   }
 }

@@ -89,7 +89,7 @@ function Tracer(jaegerCli, options) {
     logger: this.options.logger
   });
 
-  if (options.zipkinProjector) {
+  if (this.options.zipkinProjector) {
     let codec = new ZipkinB3TextMapCodec({
       urlEncoding: true
     });

@@ -6,6 +6,7 @@ const observable = require('observable-expressjs');
 
 const observed = observable.observe(app, {
   tracing: {
+    zipkinProjector: true,
     config: {
       serviceName: 'example-app'
     }
@@ -13,11 +14,13 @@ const observed = observable.observe(app, {
 });
 
 app.get('/', (req, res) => {
-
-  var aChildSpan = observed.tracer.startSpan("outbound_http_request");
+  const headers = {};
+  var aChildSpan = req.tracer.startHttpSpan('https://google.com', 'GET', headers);
   aChildSpan.log({google: 'called'});
 
-  axios.get('https://google.com')
+  console.log(headers);
+
+  axios.get('https://google.com', { headers })
     .then(() => {
       aChildSpan.finish();
       res.sendStatus(200);

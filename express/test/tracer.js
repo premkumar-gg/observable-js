@@ -1,6 +1,8 @@
 const sinon = require('sinon');
 const Tracer = require('../src/tracer').Tracer;
 const assert = require('assert');
+const { FORMAT_HTTP_HEADERS } = require('opentracing');
+const { ZipkinB3TextMapCodec } = require('jaeger-client');
 
 describe('tracer', function() {
 
@@ -35,7 +37,8 @@ describe('tracer', function() {
   describe('Tracer constructor', () => {
     const jaegerStartSpan = sinon.fake();
     const jaegerLog = sinon.fake();
-    const jaegerTracer = { startSpan: jaegerStartSpan, log: jaegerLog };
+    const registerInjector = sinon.fake();
+    const jaegerTracer = { startSpan: jaegerStartSpan, log: jaegerLog, registerInjector: registerInjector };
     const initTracerFromEnv = sinon.fake.returns(jaegerTracer);
     const jaegerCli = { initTracerFromEnv: initTracerFromEnv };
     let checkConfig;
@@ -87,6 +90,21 @@ describe('tracer', function() {
         { logger: tracer.defaultOptions.logger }
       )
     });
+
+    it ('when zipkinProjector option is set, registers injector for zipkin codec', () => {
+      const tracer = new Tracer(jaegerCli,
+        {zipkinProjector: true, config: {serviceName: 'sample-app'}});
+
+      let codec = new ZipkinB3TextMapCodec({
+        urlEncoding: true
+      });
+
+      sinon.assert.calledWith(
+        registerInjector,
+        FORMAT_HTTP_HEADERS,
+        codec
+      )
+    })
   });
 
   describe('.startSpan', () => {
