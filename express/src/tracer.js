@@ -1,5 +1,6 @@
 let mergeOptions = require('merge-options');
 const { Tags, FORMAT_HTTP_HEADERS } = require('opentracing');
+const { ZipkinB3TextMapCodec } = require('jaeger-client');
 
 const defaultOptions = {
   config: {
@@ -87,6 +88,14 @@ function Tracer(jaegerCli, options) {
   this.jaegerTracer = jaegerCli.initTracerFromEnv(this.options.config, {
     logger: this.options.logger
   });
+
+  if (options.zipkinProjector) {
+    let codec = new ZipkinB3TextMapCodec({
+      urlEncoding: true
+    });
+
+    this.jaegerTracer.registerInjector(FORMAT_HTTP_HEADERS, codec);
+  }
 
   this.defaultOptions = defaultOptions;
   this.startParentHttpSpan = startParentHttpSpan;
