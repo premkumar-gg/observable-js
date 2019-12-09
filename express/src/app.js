@@ -6,7 +6,7 @@ function isExpressObject(server) {
   return typeof server['get'] === 'function' && typeof server['post'] === 'function';
 }
 
-function setSpanMiddleware(aTracer) {
+function setTracer(aTracer) {
   this.server.use((req, res, next) => {
     if (req.url === "/manage/health") {
       next();
@@ -28,13 +28,18 @@ function setSpanMiddleware(aTracer) {
   });
 }
 
+function setMetrics(aMetrics) {
+  aMetrics.instrument(this.server);
+}
+
 function App(server) {
   if ( ! isExpressObject(server)) {
     throw Error('server is not an express app');
   }
 
   this.server = server;
-  this.setTracer = setSpanMiddleware;
+  this.setTracer = setTracer;
+  this.setMetrics = setMetrics;
 }
 
 module.exports = {
