@@ -4,7 +4,7 @@ const axios = require('axios').default;
 
 const observable = require('observable-expressjs');
 
-const observed = observable.observe(app, {
+observable.observe(app, {
   tracing: {
     zipkinProjector: true,
     config: {

@@ -1,6 +1,6 @@
 {
   "name": "observable-expressjs",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -10,7 +10,7 @@
   "author": "Premkumar Anand <premkumar@foshio.co.uk>",
   "license": "ISC",
   "dependencies": {
-    "@trussle/tricorder": "git@github.com:giffgaff/tricorder#1.0.3",
+    "@trussle/tricorder": "git@github.com:giffgaff/tricorder#1.1.0",
     "express": "^4.17.1",
     "jaeger-client": "^3.17.1",
     "merge-options": "^2.0.0"
