@@ -2,7 +2,7 @@ const Tracer = require('./tracer').Tracer;
 const Metrics = require('./metrics').Metrics;
 const App = require('./app').App;
 const jaegerCli = require('jaeger-client');
-const tricorder = require('@trussle/tricorder');
+const tricorder = require('../lib/tricorder');
 let mergeOptions = require('merge-options');
 
 const defaultOptions = {
