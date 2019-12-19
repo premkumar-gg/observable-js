@@ -15,17 +15,17 @@ const metric = {
       clients: new client.Gauge({
         name: "http_requests_processing",
         help: "Http requests in progress",
-        labelNames: ["method", "path", "status"]
+        labelNames: ["method", "path", "status", "workerId"]
       }),
       throughput: new client.Counter({
         name: "http_requests_total",
         help: "Http request throughput",
-        labelNames: ["method", "path", "status"]
+        labelNames: ["method", "path", "status", "workerId"]
       }),
       duration: new client.Histogram({
         name: "http_request_duration_seconds",
         help: "Request duration histogram in seconds",
-        labelNames: ["method", "path", "status"]
+        labelNames: ["method", "path", "status", "workerId"]
       })
     }
   }
@@ -41,6 +41,14 @@ function defaultOptions(options) {
 function instrument(server, options) {
   const opt = defaultOptions(options);
 
+  function getWorkerId() {
+    if (!cluster.isMaster) {
+      return (cluster.worker && cluster.worker.id) ? cluster.worker.id : 0;
+    }
+
+    return 0;
+  }
+
   function middleware(req, res, next) {
     if (req.path !== opt.url) {
       const end = metric.http.requests.duration.startTimer();
@@ -50,7 +58,8 @@ function instrument(server, options) {
         const labels = {
           method: req.method,
           path: req.route ? req.baseUrl + req.route.path : req.path,
-          status: res.statusCode
+          status: res.statusCode,
+          workerId: getWorkerId()
         };
 
         if (opt.timestamps) {
