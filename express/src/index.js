@@ -4,6 +4,7 @@ const App = require('./app').App;
 const jaegerCli = require('jaeger-client');
 const tricorder = require('../lib/tricorder');
 let mergeOptions = require('merge-options');
+const { HttpTracer } = require('./http-tracer');
 
 const defaultOptions = {
   tracing: {},
@@ -42,5 +43,6 @@ function observe(server, options, aJaegerCli, aTricorder) {
 }
 
 module.exports = {
-  observe
+  observe,
+  HttpTracer
 };

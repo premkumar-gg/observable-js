@@ -2,9 +2,9 @@ const express = require('express');
 const app = express();
 const axios = require('axios').default;
 
-const observable = require('observable-expressjs');
+const { observe, HttpTracer } = require('observable-expressjs');
 
-observable.observe(app, {
+observe(app, {
   tracing: {
     zipkinProjector: true,
     config: {
@@ -15,14 +15,12 @@ observable.observe(app, {
 
 app.get('/', (req, res) => {
   const headers = {};
-  var aChildSpan = req.tracer.startHttpSpan('https://google.com', 'GET', headers);
-  aChildSpan.log({google: 'called'});
-
-  console.log(headers);
+  const httpTracer = new HttpTracer(req);
+  httpTracer.startSpan('https://google.com', 'GET', headers);
 
   axios.get('https://google.com', { headers })
     .then(() => {
-      aChildSpan.finish();
+      httpTracer.finishSpan(200);
       res.sendStatus(200);
     })
 });
