@@ -8,7 +8,7 @@ function isExpressObject(server) {
 
 function setTracer(aTracer) {
   this.server.use((req, res, next) => {
-    if (req.url === "/manage/health") {
+    if (!aTracer.traceUrl(req.url)) {
       next();
       return;
     }

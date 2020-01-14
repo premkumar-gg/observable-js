@@ -406,5 +406,54 @@ describe('tracer', function() {
         200
       );
     });
+  });
+
+  describe('.traceUrl', () => {
+    const jaegerSetTag = sinon.fake();
+    const jaegerStartSpan = sinon.fake.returns({ setTag: jaegerSetTag });
+    const jaegerInject = sinon.fake();
+    const jaegerTracer = { startSpan: jaegerStartSpan, inject: jaegerInject };
+    const initTracerFromEnv = sinon.fake.returns(jaegerTracer);
+    const jaegerCli = { initTracerFromEnv: initTracerFromEnv };
+
+    var theTracer;
+
+    it ('returns false if url is /metrics, by default', () => {
+      theTracer = new Tracer(
+        jaegerCli,
+        { config: {}, logger: {} }
+      );
+
+      assert(!theTracer.traceUrl('/metrics'));
+    });
+
+    it ('returns false if url is /metrics, when blacklist URLs are configured', () => {
+      theTracer = new Tracer(
+        jaegerCli,
+        { blacklistUrls: ["/some-url", "/some-other-url"], config: {}, logger: {} }
+      );
+
+      assert(!theTracer.traceUrl('/metrics'));
+    });
+
+    it ('returns false if url is configured as blacklist', () => {
+      theTracer = new Tracer(
+        jaegerCli,
+        { blacklistUrls: ["/some-url", "/some-other-url"], config: {}, logger: {} }
+      );
+
+      assert(!theTracer.traceUrl('/some-url'));
+      assert(!theTracer.traceUrl('/some-other-url'));
+    });
+
+    it ('returns false if url is configured as blacklist CSV', () => {
+      theTracer = new Tracer(
+        jaegerCli,
+        { blacklistUrls: "/some-url, /some-other-url", config: {}, logger: {} }
+      );
+
+      assert(!theTracer.traceUrl('/some-url'));
+      assert(!theTracer.traceUrl('/some-other-url'));
+    });
   })
 });

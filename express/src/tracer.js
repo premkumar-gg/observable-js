@@ -76,6 +76,23 @@ function startParentHttpSpan(req, name) {
   return theSpan;
 }
 
+function traceUrl(checkUrl) {
+  let theBlacklistUrls = this.options.blacklistUrls;
+
+  if (!theBlacklistUrls) {
+    theBlacklistUrls = [];
+  }
+
+  if (typeof theBlacklistUrls === 'string') {
+    theBlacklistUrls = theBlacklistUrls.split(',');
+  }
+
+  theBlacklistUrls = theBlacklistUrls.map(x => x.trim());
+  theBlacklistUrls.push('/metrics');
+
+  return !theBlacklistUrls.some(aURL => aURL === checkUrl);
+}
+
 function getBaseTracer() {
   return this.jaegerTracer;
 }
@@ -104,6 +121,7 @@ function Tracer(jaegerCli, options) {
   this.startHttpSpan = startHttpSpan;
   this.finishSpan = finishSpan;
   this.finishHttpSpan = finishHttpSpan;
+  this.traceUrl = traceUrl;
 }
 
 module.exports = {
