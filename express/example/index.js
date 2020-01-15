@@ -17,10 +17,10 @@ app.get('/', (req, res) => {
   const headers = {};
   const httpTracer = new HttpTracer(req);
   httpTracer.startSpan('https://google.com', 'GET', headers);
+  httpTracer.interceptAxiosClient(axios);
 
   axios.get('https://google.com', { headers })
     .then(() => {
-      httpTracer.finishSpan(200);
       res.sendStatus(200);
     })
 });
