@@ -24,18 +24,27 @@ function interceptAxiosClient(axiosClient) {
   axiosClient.interceptors.request.use((config) => {
     try {
       _t.startSpan(config.url, config.method, config.headers);
-    } catch {
+    } catch(e) {
       //Do not affect the service if something is going wrong
+      console.log(e);
     }
     return config;
   });
 
 
   axiosClient.interceptors.response.use((response) => {
-    try { _t.finishSpan(response.status); } catch {}
+    try {
+      _t.finishSpan(response.status);
+    } catch(e) {
+      console.log(e);
+    }
     return response;
   }, (error) => {
-    try { _t.finishSpan(error.response.status); } catch {}
+    try {
+      _t.finishSpan(error.response.status);
+    } catch(e) {
+      console.log(e);
+    }
     return Promise.reject(error);
   });
 }
